@@ -2,12 +2,16 @@ app.component('product-display', {
   props: {
     premium: {
       type: Boolean,
-      required: true
-    }
+      required: true,
+    },
+    cart: {
+      type: Array,
+      required: true,
+    },
   },
-  template: 
-  /*html*/
-  `<div class="product-display">
+  template:
+    /*html*/
+    `<div class="product-display">
     <div class="product-container">
       <div class="product-image">
         <img v-bind:src="image">
@@ -30,6 +34,7 @@ app.component('product-display', {
           @mouseover="updateVariant(index)" 
           class="color-circle" 
           :style="{ backgroundColor: variant.color }">
+          {{variant.quantity}}
         </div>
         
         <button 
@@ -39,44 +44,74 @@ app.component('product-display', {
           v-on:click="addToCart">
           Add to Cart
         </button>
+
+        <button 
+          class="button" 
+          :class="{ disabledButton: !isAvailableInCart || emptyCart || false}" 
+          :disabled=" !isAvailableInCart || emptyCart || false" 
+          v-on:click="deleteCart">
+          Delete Item
+        </button>
       </div>
     </div>
   </div>`,
   data() {
     return {
-        product: 'Socks',
-        brand: 'Vue Mastery',
-        selectedVariant: 0,
-        details: ['50% cotton', '30% wool', '20% polyester'],
-        variants: [
-          { id: 2234, color: 'green', image: './assets/images/socks_green.jpg', quantity: 50 },
-          { id: 2235, color: 'blue', image: './assets/images/socks_blue.jpg', quantity: 0 },
-        ]
-    }
+      product: 'Socks',
+      brand: 'Vue Mastery',
+      selectedVariant: 0,
+      details: ['50% cotton', '30% wool', '20% polyester'],
+      variants: [
+        {
+          id: 2234,
+          color: '#3E9E79',
+          image: './assets/images/socks_green.jpg',
+          quantity: 50,
+        },
+        {
+          id: 2235,
+          color: '#224C70',
+          image: './assets/images/socks_blue.jpg',
+          quantity: 20,
+        },
+      ],
+    };
   },
   methods: {
-      addToCart() {
-          this.cart += 1
-      },
-      updateVariant(index) {
-          this.selectedVariant = index
-      }
+    addToCart() {
+      if (!this.variants[this.selectedVariant].quantity) return;
+      this.$emit('add-to-cart', this.variants[this.selectedVariant].id);
+      this.variants[this.selectedVariant].quantity -= 1;
+    },
+    deleteCart() {
+      if (!this.isAvailableInCart) return;
+      this.$emit('delete-one-cart', this.variants[this.selectedVariant].id);
+      this.variants[this.selectedVariant].quantity += 1;
+    },
+    updateVariant(index) {
+      this.selectedVariant = index;
+    },
   },
   computed: {
-      title() {
-          return this.brand + ' ' + this.product
-      },
-      image() {
-          return this.variants[this.selectedVariant].image
-      },
-      inStock() {
-          return this.variants[this.selectedVariant].quantity
-      },
-      shipping() {
-        if (this.premium) {
-          return 'Free'
-        }
-        return 2.99
-      }
-  }
-})
+    title() {
+      return this.brand + ' ' + this.product;
+    },
+    image() {
+      return this.variants[this.selectedVariant].image;
+    },
+    inStock() {
+      return this.variants[this.selectedVariant].quantity;
+    },
+    isAvailableInCart() {
+      return this.cart.includes(this.variants[this.selectedVariant].id);
+    },
+    emptyCart() {
+      if (!this.cart.length) return true;
+      return false;
+    },
+    shipping() {
+      if (this.premium) return 'Free';
+      return 2.99;
+    },
+  },
+});
